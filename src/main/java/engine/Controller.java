@@ -70,7 +70,7 @@ public class Controller {
                         materialScore += negateMaterial * 3.0;
                         break;
                     case("QUEEN"):
-                        materialScore += negateMaterial * 45.0;
+                        materialScore += negateMaterial * 9.0;
                         break;
                     case("KING"):
                         materialScore += negateMaterial * 200.0;
@@ -126,7 +126,6 @@ public class Controller {
 
         for (Move move: tempBoard.legalMoves()) {
             tempBoard.doMove(move);
-            //tempBoard.setSideToMove(tempBoard.getSideToMove().flip());
             score = alphaBetaMax(alpha, beta, depthleft - 1, tempBoard);
             if(score <= alpha) {
                 return alpha; // fail hard alpha-cutoff
