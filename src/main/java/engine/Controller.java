@@ -2,16 +2,17 @@ package engine;
 
 import com.github.bhlangonijr.chesslib.*;
 import com.github.bhlangonijr.chesslib.move.Move;
+import com.github.bhlangonijr.chesslib.move.MoveGeneratorException;
 
 public class Controller {
-    private int depth = 20;
+    private int depth = 2;
 
     public Controller(){
 
     }
     public Move findBestMove(Board board) {
         double tempScore;
-        double moveScore = -100000;
+        double moveScore = Double.NEGATIVE_INFINITY;
         Move bestMove = null;
         Board tempBoard = new Board();
         tempBoard.loadFromFen(board.getFen());
@@ -19,7 +20,8 @@ public class Controller {
 
         for (Move move:board.legalMoves()) {
             tempBoard.doMove(move);
-            tempScore = alphaBetaMax(100000, -99999, depth, tempBoard);
+            tempBoard.setSideToMove(tempBoard.getSideToMove().flip());
+            tempScore = alphaBetaMax(Double.NEGATIVE_INFINITY, Double.POSITIVE_INFINITY, depth, tempBoard);
             if (tempScore > moveScore) {
                 moveScore = tempScore;
                 bestMove = move;
@@ -68,7 +70,7 @@ public class Controller {
                         materialScore += negateMaterial * 3.0;
                         break;
                     case("QUEEN"):
-                        materialScore += negateMaterial * 9.0;
+                        materialScore += negateMaterial * 45.0;
                         break;
                     case("KING"):
                         materialScore += negateMaterial * 200.0;
@@ -102,6 +104,7 @@ public class Controller {
             if(score > alpha) {
                 alpha = score; // alpha acts like max in MiniMax
             }
+            tempBoard.loadFromFen(board.getFen());
         }
         return alpha;
     }
@@ -114,8 +117,16 @@ public class Controller {
         if (depthleft == 0) {
             return -1 * evaluateBoard(tempBoard);
         }
+
+        try {
+            tempBoard.legalMoves();
+        } catch (MoveGeneratorException e) {
+            return alpha;
+        }
+
         for (Move move: tempBoard.legalMoves()) {
             tempBoard.doMove(move);
+            //tempBoard.setSideToMove(tempBoard.getSideToMove().flip());
             score = alphaBetaMax(alpha, beta, depthleft - 1, tempBoard);
             if(score <= alpha) {
                 return alpha; // fail hard alpha-cutoff
@@ -123,6 +134,7 @@ public class Controller {
             if(score < beta) {
                 beta = score; // beta acts like min in MiniMax
             }
+            tempBoard.loadFromFen(board.getFen());
         }
         return beta;
     }
