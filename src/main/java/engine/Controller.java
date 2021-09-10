@@ -2,14 +2,14 @@ package engine;
 
 import com.github.bhlangonijr.chesslib.*;
 import com.github.bhlangonijr.chesslib.move.Move;
-import com.github.bhlangonijr.chesslib.move.MoveGeneratorException;
+
+import java.util.HashMap;
+import java.util.Map;
 
 public class Controller {
-    private int depth = 4;
+    private int depth = 6;
+    private Map<Long, TranspositionNode> transpositionTable = new HashMap<>();
 
-    public Controller(){
-
-    }
     public Move findBestMove(Board board) {
         double tempScore;
         double moveScore = Double.POSITIVE_INFINITY;
@@ -17,10 +17,12 @@ public class Controller {
 
         for (Move move:board.legalMoves()) {
             board.doMove(move);
-            tempScore = alphabeta(Double.NEGATIVE_INFINITY, Double.POSITIVE_INFINITY, depth, board, true);
-            if (tempScore < moveScore) {
-                moveScore = tempScore;
-                bestMove = move;
+            for(int distance = 1; distance < depth; distance++) {
+                tempScore = alphabeta(Double.NEGATIVE_INFINITY, Double.POSITIVE_INFINITY, distance, board, true);
+                if (tempScore < moveScore) {
+                    moveScore = tempScore;
+                    bestMove = move;
+                }
             }
             board.undoMove();
         }
@@ -84,8 +86,38 @@ public class Controller {
     }
 
     private double alphabeta(double alpha, double beta, int depthleft, Board board, boolean maximizingPlayer) {
+        if (transpositionTable.containsKey(board.getZobristKey()) && transpositionTable.get(board.getZobristKey()).depth > depthleft) {
+            double score = transpositionTable.get(board.getZobristKey()).score;
+            int type = transpositionTable.get(board.getZobristKey()).type;
+
+            if (type == 0) {
+                return score;
+            }
+            else if (type == 1 && score >= beta) {
+                return score;
+            }
+            else if (type == -1 && score <= alpha) {
+                return score;
+            }
+            else if (beta <= alpha) {
+                return score;
+            }
+        }
+
         if (depthleft == 0) {
-            return evaluateBoard(board);
+            double score = evaluateBoard(board);
+
+            if (score <= alpha) {
+                transpositionTable.put(board.getZobristKey(), new TranspositionNode(score, -1, depth - depthleft));
+            }
+            else if (score >= beta) {
+                transpositionTable.put(board.getZobristKey(), new TranspositionNode(score, 1, depth - depthleft));
+            }
+            else {
+                transpositionTable.put(board.getZobristKey(), new TranspositionNode(score, 0, depth - depthleft));
+            }
+
+            return score;
         }
 
         if (maximizingPlayer) {
