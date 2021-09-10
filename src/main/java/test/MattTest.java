@@ -14,8 +14,6 @@ public class MattTest {
     public static void main(String[] args) {
         Board board = new Board();
 
-        //board.loadFromFen("k7/8/8/6p1/8/7N/8/K7 w - - 0 1");
-
         controller = new Controller();
         String userMove = "";
 

@@ -5,35 +5,31 @@ import com.github.bhlangonijr.chesslib.move.Move;
 import com.github.bhlangonijr.chesslib.move.MoveGeneratorException;
 
 public class Controller {
-    private int depth = 2;
+    private int depth = 4;
 
     public Controller(){
 
     }
     public Move findBestMove(Board board) {
         double tempScore;
-        double moveScore = Double.NEGATIVE_INFINITY;
+        double moveScore = Double.POSITIVE_INFINITY;
         Move bestMove = null;
-        Board tempBoard = new Board();
-        tempBoard.loadFromFen(board.getFen());
-
 
         for (Move move:board.legalMoves()) {
-            tempBoard.doMove(move);
-            tempBoard.setSideToMove(tempBoard.getSideToMove().flip());
-            tempScore = alphaBetaMax(Double.NEGATIVE_INFINITY, Double.POSITIVE_INFINITY, depth, tempBoard);
-            if (tempScore > moveScore) {
+            board.doMove(move);
+            tempScore = alphabeta(Double.NEGATIVE_INFINITY, Double.POSITIVE_INFINITY, depth, board, true);
+            if (tempScore < moveScore) {
                 moveScore = tempScore;
                 bestMove = move;
             }
-            tempBoard.loadFromFen(board.getFen());
+            board.undoMove();
         }
         System.out.println("\nBest move: " + bestMove);
         return bestMove;
     }
 
     private double evaluateBoard(Board board) {
-        return evaluateMobilityScore(board) + evaluateMaterialScore(board);
+        return (evaluateMobilityScore(board) + evaluateMaterialScore(board)) * (board.getSideToMove() == Side.BLACK ? -1.0 : 1.0);
     }
 
     private double evaluateMobilityScore(Board board) {
@@ -87,54 +83,45 @@ public class Controller {
         return materialScore;
     }
 
-    private double alphaBetaMax(double alpha, double beta, int depthleft, Board board) {
-        double score;
-        Board tempBoard = new Board();
-        tempBoard.loadFromFen(board.getFen());
-
+    private double alphabeta(double alpha, double beta, int depthleft, Board board, boolean maximizingPlayer) {
         if (depthleft == 0) {
-            return evaluateBoard(tempBoard);
+            return evaluateBoard(board);
         }
-        for (Move move: tempBoard.legalMoves()) {
-            tempBoard.doMove(move);
-            score = alphaBetaMin(alpha, beta, depthleft - 1, tempBoard);
-            if(score >= beta) {
-                return beta;   // fail hard beta-cutoff
+
+        if (maximizingPlayer) {
+            double maxVal = Double.NEGATIVE_INFINITY;
+
+            for (Move move : board.legalMoves()) {
+
+                board.doMove(move);
+                double val = Math.max(maxVal, alphabeta(alpha, beta, depthleft-1, board, false));
+                board.undoMove();
+                maxVal = Math.max(maxVal, val);
+                alpha = Math.max(alpha, maxVal);
+
+                if (beta <= alpha) {
+                    break;
+                }
             }
-            if(score > alpha) {
-                alpha = score; // alpha acts like max in MiniMax
-            }
-            tempBoard.loadFromFen(board.getFen());
+            return maxVal;
         }
-        return alpha;
+        else {
+            double minVal = Double.POSITIVE_INFINITY;
+
+            for(Move move : board.legalMoves()) {
+
+                board.doMove(move);
+                double val = Math.min(minVal, alphabeta(alpha, beta, depthleft-1, board, true));
+                board.undoMove();
+                minVal = Math.min(minVal, val);
+                beta = Math.min(beta, minVal);
+
+                if (beta <= alpha) {
+                    break;
+                }
+            }
+            return minVal;
+        }
     }
 
-    private double alphaBetaMin(double alpha, double beta, int depthleft, Board board) {
-        double score;
-        Board tempBoard = new Board();
-        tempBoard.loadFromFen(board.getFen());
-
-        if (depthleft == 0) {
-            return -1 * evaluateBoard(tempBoard);
-        }
-
-        try {
-            tempBoard.legalMoves();
-        } catch (MoveGeneratorException e) {
-            return alpha;
-        }
-
-        for (Move move: tempBoard.legalMoves()) {
-            tempBoard.doMove(move);
-            score = alphaBetaMax(alpha, beta, depthleft - 1, tempBoard);
-            if(score <= alpha) {
-                return alpha; // fail hard alpha-cutoff
-            }
-            if(score < beta) {
-                beta = score; // beta acts like min in MiniMax
-            }
-            tempBoard.loadFromFen(board.getFen());
-        }
-        return beta;
-    }
 }
