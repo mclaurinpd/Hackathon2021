@@ -4,10 +4,12 @@ import com.github.bhlangonijr.chesslib.*;
 import com.github.bhlangonijr.chesslib.move.Move;
 
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 public class Controller {
-    private int depth = 6;
+    private int depth = 20;
+    private int distance;
     private Map<Long, TranspositionNode> transpositionTable = new HashMap<>();
 
     public Move findBestMove(Board board) {
@@ -15,17 +17,30 @@ public class Controller {
         double moveScore = Double.POSITIVE_INFINITY;
         Move bestMove = null;
 
-        for (Move move:board.legalMoves()) {
-            board.doMove(move);
-            for(int distance = 1; distance < depth; distance++) {
+        if (board.getMoveCounter() < 10) {
+            OpeningController openingController = new OpeningController();
+            List<OpeningMove> openingMoves = openingController.getOpeningMoves(board.getFen());
+
+            if (!openingMoves.isEmpty()) {
+                OpeningMove openingMove = openingController.getOpeningMoves(board.getFen()).get(0);
+                return new Move(openingMove.getMove(), board.getSideToMove());
+            }
+        }
+
+        long startTime = System.currentTimeMillis();
+
+        for(distance = 1; distance < depth && (System.currentTimeMillis() - startTime) < 10000; distance++) {
+            for (Move move:board.legalMoves()) {
+                board.doMove(move);
                 tempScore = alphabeta(Double.NEGATIVE_INFINITY, Double.POSITIVE_INFINITY, distance, board, true);
                 if (tempScore < moveScore) {
                     moveScore = tempScore;
                     bestMove = move;
                 }
+                board.undoMove();
             }
-            board.undoMove();
         }
+
         System.out.println("\nBest move: " + bestMove);
         return bestMove;
     }
@@ -93,10 +108,10 @@ public class Controller {
             if (type == 0) {
                 return score;
             }
-            else if (type == 1 && score >= beta) {
+            else if (type == -1 && score >= beta) {
                 return score;
             }
-            else if (type == -1 && score <= alpha) {
+            else if (type == 1 && score <= alpha) {
                 return score;
             }
             else if (beta <= alpha) {
@@ -108,13 +123,13 @@ public class Controller {
             double score = evaluateBoard(board);
 
             if (score <= alpha) {
-                transpositionTable.put(board.getZobristKey(), new TranspositionNode(score, -1, depth - depthleft));
+                transpositionTable.put(board.getZobristKey(), new TranspositionNode(score, 1, distance));
             }
             else if (score >= beta) {
-                transpositionTable.put(board.getZobristKey(), new TranspositionNode(score, 1, depth - depthleft));
+                transpositionTable.put(board.getZobristKey(), new TranspositionNode(score, -1, distance));
             }
             else {
-                transpositionTable.put(board.getZobristKey(), new TranspositionNode(score, 0, depth - depthleft));
+                transpositionTable.put(board.getZobristKey(), new TranspositionNode(score, 0, distance));
             }
 
             return score;
