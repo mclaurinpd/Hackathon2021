@@ -17,7 +17,6 @@ public class OpeningController {
     private final String url = "http://www.chessdb.cn/cdb.php?action=queryall&board=";
 
     public List<OpeningMove> getOpeningMoves(String fen) {
-
         HttpClient client = HttpClient.newHttpClient();
 
         try {
@@ -35,8 +34,13 @@ public class OpeningController {
     }
 
     private List<OpeningMove> decodeOpening(String body) {
-        String[] moves = body.split("\\|");
         List<OpeningMove> openingMoves = new ArrayList<>();
+
+        if (body.trim().equalsIgnoreCase("unknown")) {
+            return openingMoves;
+        }
+
+        String[] moves = body.split("\\|");
 
         if (moves.length <= 0) {
             return openingMoves;

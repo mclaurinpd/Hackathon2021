@@ -22,8 +22,7 @@ public class Controller {
             List<OpeningMove> openingMoves = openingController.getOpeningMoves(board.getFen());
 
             if (!openingMoves.isEmpty()) {
-                OpeningMove openingMove = openingController.getOpeningMoves(board.getFen()).get(0);
-                return new Move(openingMove.getMove(), board.getSideToMove());
+                return new Move(openingMoves.get(0).getMove(), board.getSideToMove());
             }
         }
 
