@@ -6,7 +6,7 @@ import engine.Controller;
 
 import java.util.Scanner;
 
-public class MattTest {
+public class Test {
     private static Controller controller;
     private static Scanner reader = new Scanner(System.in);
 
