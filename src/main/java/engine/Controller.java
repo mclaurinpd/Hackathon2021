@@ -30,7 +30,7 @@ public class Controller {
 
         long startTime = System.currentTimeMillis();
 
-        for(distance = 1; distance < depth && (System.currentTimeMillis() - startTime) < 30000; distance++) {
+        for(distance = 1; distance < depth && (System.currentTimeMillis() - startTime) < 20000; distance++) {
             for (int i=0; i < moves.size(); i++) {
                 board.doMove(moves.get(i));
                 tempScore = alphabeta(Double.NEGATIVE_INFINITY, Double.POSITIVE_INFINITY, distance, board, true);

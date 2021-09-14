@@ -13,7 +13,6 @@ public class Test {
 
     public static void main(String[] args) {
         Board board = new Board();
-        board.loadFromFen("r3kb1r/pp1n1ppp/2p1b3/3q4/B4p2/5N2/PPPPQ1PP/R1B1K2R w KQkq - 2 10");
 
         controller = new Controller();
         String userMove = "";
