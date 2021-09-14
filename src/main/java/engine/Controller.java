@@ -3,12 +3,13 @@ package engine;
 import com.github.bhlangonijr.chesslib.*;
 import com.github.bhlangonijr.chesslib.move.Move;
 
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
 public class Controller {
-    private int depth = 20;
+    private int depth = 10;
     private int distance;
     private Map<Long, TranspositionNode> transpositionTable = new HashMap<>();
 
@@ -16,6 +17,7 @@ public class Controller {
         double tempScore;
         double moveScore = Double.POSITIVE_INFINITY;
         Move bestMove = null;
+        List<Move> moves = board.legalMoves();
 
         if (board.getMoveCounter() < 10) {
             OpeningController openingController = new OpeningController();
@@ -28,13 +30,15 @@ public class Controller {
 
         long startTime = System.currentTimeMillis();
 
-        for(distance = 1; distance < depth && (System.currentTimeMillis() - startTime) < 10000; distance++) {
-            for (Move move:board.legalMoves()) {
-                board.doMove(move);
+        for(distance = 1; distance < depth && (System.currentTimeMillis() - startTime) < 30000; distance++) {
+            for (int i=0; i < moves.size(); i++) {
+                board.doMove(moves.get(i));
                 tempScore = alphabeta(Double.NEGATIVE_INFINITY, Double.POSITIVE_INFINITY, distance, board, true);
                 if (tempScore < moveScore) {
                     moveScore = tempScore;
-                    bestMove = move;
+                    bestMove = moves.get(i);
+                    moves.remove(moves.get(i));
+                    moves.add(0, bestMove);
                 }
                 board.undoMove();
             }
@@ -100,9 +104,9 @@ public class Controller {
     }
 
     private double alphabeta(double alpha, double beta, int depthleft, Board board, boolean maximizingPlayer) {
-        if (transpositionTable.containsKey(board.getZobristKey()) && transpositionTable.get(board.getZobristKey()).depth > depthleft) {
-            double score = transpositionTable.get(board.getZobristKey()).score;
-            int type = transpositionTable.get(board.getZobristKey()).type;
+        if (transpositionTable.containsKey(board.getIncrementalHashKey()) && transpositionTable.get(board.getIncrementalHashKey()).depth > depthleft) {
+            double score = transpositionTable.get(board.getIncrementalHashKey()).score;
+            int type = transpositionTable.get(board.getIncrementalHashKey()).type;
 
             if (type == 0) {
                 return score;
@@ -122,13 +126,13 @@ public class Controller {
             double score = evaluateBoard(board);
 
             if (score <= alpha) {
-                transpositionTable.put(board.getZobristKey(), new TranspositionNode(score, 1, distance));
+                transpositionTable.put(board.getIncrementalHashKey(), new TranspositionNode(score, 1, distance));
             }
             else if (score >= beta) {
-                transpositionTable.put(board.getZobristKey(), new TranspositionNode(score, -1, distance));
+                transpositionTable.put(board.getIncrementalHashKey(), new TranspositionNode(score, -1, distance));
             }
             else {
-                transpositionTable.put(board.getZobristKey(), new TranspositionNode(score, 0, distance));
+                transpositionTable.put(board.getIncrementalHashKey(), new TranspositionNode(score, 0, distance));
             }
 
             return score;
